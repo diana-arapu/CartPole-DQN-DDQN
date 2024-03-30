@@ -69,7 +69,7 @@ if __name__ == "__main__":
     
     epsilons = load('epsilons')
     plot_epsilons(epsilons)
-    '''
+    
     dur1 = load('dqn')
     dur2 = load('ddqn')
     dur3 = load('random')
@@ -78,5 +78,5 @@ if __name__ == "__main__":
     avg2, sd2 = moving_average(dur2, window_size)
     avg3, sd3 = moving_average(dur3, window_size)
     plot_durations(avg1, avg2, avg3, sd1, sd2, sd3)
-    '''
+    
     

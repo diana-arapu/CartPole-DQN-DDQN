@@ -1,9 +1,7 @@
 import gymnasium as gym
 import torch
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
-import pandas as pd
+import os
 from agents.dqn import *
 from agents.ddqn import *
 from agents.random import *
@@ -18,16 +16,16 @@ def create_agent(agent_type, env):
 
 def save_intermediate(agent, e, saving):
     if isinstance(agent, DQNAgent) and e % saving == 0:
-            torch.save(agent.primary_model.state_dict(), "dqn_model{}.pt".format(e))
+            torch.save(agent.primary_model.state_dict(), 'runs/dqn_model{}.pt'.format(e))
 
     if isinstance(agent, DDQNAgent) and e % saving == 0:
-            torch.save(agent.primary_model.state_dict(), "ddqn_model{}.pt".format(e))
+            torch.save(agent.primary_model.state_dict(), 'runs/ddqn_model{}.pt'.format(e))
 
 def save_model(agent):
     if isinstance(agent, DQNAgent):
-        torch.save(agent.primary_model.state_dict(), "dqn_model.pt")
+        torch.save(agent.primary_model.state_dict(), 'runs/dqn_model.pt')
     if isinstance(agent, DDQNAgent):
-        torch.save(agent.primary_model.state_dict(), "ddqn_model.pt")
+        torch.save(agent.primary_model.state_dict(), 'runs/ddqn_model.pt')
 
 def env_interaction(env, agent, n_episodes, n_iterations=500, batch_size=64):
     steps = 0
@@ -71,17 +69,17 @@ def env_interaction(env, agent, n_episodes, n_iterations=500, batch_size=64):
 
 def save_durations(dur, agent_type):
     if agent_type == 'dqn':
-        with open('dqn.npy', 'wb') as f:
+        with open('runs/dqn.npy', 'wb') as f:
             np.save(f, dur)
     if agent_type == 'ddqn':
-        with open('ddqn.npy', 'wb') as f:
+        with open('runs/ddqn.npy', 'wb') as f:
             np.save(f, dur)
     if agent_type == 'random':
-        with open('random.npy', 'wb') as f:
+        with open('runs/random.npy', 'wb') as f:
             np.save(f, dur)
 
 def save_epsilons(epsilons):
-    with open('epsilons.npy', 'wb') as f:
+    with open('runs','epsilons.npy', 'wb') as f:
         np.save(f, epsilons)
 
 
