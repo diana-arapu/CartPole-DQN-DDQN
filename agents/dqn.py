@@ -8,13 +8,13 @@ class DQNModel(nn.Module):
     def __init__(self, state_size, n_actions): # n_actions = env.action_space.n
         super(DQNModel, self).__init__()
         self.model = torch.nn.Sequential(
-            torch.nn.Linear(state_size, 16),
+            torch.nn.Linear(state_size, 24),
             torch.nn.ReLU(),
-            torch.nn.Linear(16,16),
+            torch.nn.Linear(24,24),
             torch.nn.ReLU(),
-            torch.nn.Linear(16, n_actions)
+            torch.nn.Linear(24, n_actions)
         )
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cpu') # 'cuda:0' if torch.cuda.is_available() else 
         self.to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.05)
         self.criterion = torch.nn.MSELoss()
@@ -27,8 +27,8 @@ class DQNAgent:
     def __init__(self, env):
         self.gamma = 1
         self.epsilon = 1 ## start epsilon
-        self.epsilon_end = 0
-        self.epsilon_decay=0.001
+        self.epsilon_end = 0.05
+        self.epsilon_decay= 0.99#0.997
         self.env = env
         self.action_space = [i for i in range(env.action_space.n)]
         self.state_size = self.env.observation_space.shape[0]
@@ -37,9 +37,9 @@ class DQNAgent:
         self.target_model = DQNModel(self.state_size, env.action_space.n)
         self.target_model.load_state_dict(self.primary_model.state_dict())
         self.tau = 0.001
-        self.c = 100
+        self.c = 1000
 
-        self.memory_capacity = 10000
+        self.memory_capacity = 100000
         self.memory_counter = 0
         self.states_memory = np.zeros((self.memory_capacity, self.state_size), dtype=np.float32)
         self.next_states_memory = np.zeros((self.memory_capacity, self.state_size), dtype=np.float32)

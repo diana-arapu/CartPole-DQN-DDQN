@@ -1,0 +1,5 @@
+c = 100
+layers = 16 neurons each
+epsilon decay = 
+memory capacity = 10.000
+batch size = 64

@@ -1,7 +1,6 @@
 import gymnasium as gym
 import torch
 import numpy as np
-import os
 from agents.dqn import *
 from agents.ddqn import *
 from agents.random import *
@@ -14,24 +13,24 @@ def create_agent(agent_type, env):
     if agent_type == 'ddqn':
         return DDQNAgent(env)
 
-def save_intermediate(agent, e, saving):
+def save_intermediate(agent, e, saving, exp):
     if isinstance(agent, DQNAgent) and e % saving == 0:
-            torch.save(agent.primary_model.state_dict(), 'runs/dqn_model{}.pt'.format(e))
+            torch.save(agent.primary_model.state_dict(), 'runs/dqn_model{}{}.pt'.format(exp, e))
 
     if isinstance(agent, DDQNAgent) and e % saving == 0:
-            torch.save(agent.primary_model.state_dict(), 'runs/ddqn_model{}.pt'.format(e))
+            torch.save(agent.primary_model.state_dict(), 'runs/ddqn_model{}{}.pt'.format(exp, e))
 
-def save_model(agent):
+def save_model(agent, exp):
     if isinstance(agent, DQNAgent):
-        torch.save(agent.primary_model.state_dict(), 'runs/dqn_model.pt')
+        torch.save(agent.primary_model.state_dict(), 'runs/dqn_model{}.pt'.format(exp))
     if isinstance(agent, DDQNAgent):
-        torch.save(agent.primary_model.state_dict(), 'runs/ddqn_model.pt')
+        torch.save(agent.primary_model.state_dict(), 'runs/ddqn_model{}.pt'.format(exp))
 
-def env_interaction(env, agent, n_episodes, n_iterations=500, batch_size=64):
+def env_interaction(env, agent, exp, n_episodes, n_iterations=500, batch_size=64):
     steps = 0
     episode_durations = np.array([])
     epsilons = np.array([], np.float32)
-    saving =200
+    saving = 1000
 
     for e in range(n_episodes):
         current_state, info = env.reset(seed=42)
@@ -54,49 +53,48 @@ def env_interaction(env, agent, n_episodes, n_iterations=500, batch_size=64):
                 episode_durations = np.append(episode_durations, i + 1)
                 break
 
-        save_intermediate(agent, e, saving)
+        #save_intermediate(agent, e, saving, exp)
         
         if not isinstance(agent, RandomAgent):
             epsilons = np.append(epsilons, agent.epsilon)            
-            if agent.epsilon > agent.epsilon_end:
-                agent.epsilon -= agent.epsilon_decay
-            else:
-                agent.epsilon = agent.epsilon_end
+            agent.epsilon *= agent.epsilon_decay
 
     env.close()
-    save_model(agent)
+    save_model(agent, exp)
     return episode_durations, epsilons
 
-def save_durations(dur, agent_type):
+def save_durations(dur, agent_type, exp):
     if agent_type == 'dqn':
-        with open('runs/dqn.npy', 'wb') as f:
+        with open('runs/dqn{}.npy'.format(exp), 'wb') as f:
             np.save(f, dur)
     if agent_type == 'ddqn':
-        with open('runs/ddqn.npy', 'wb') as f:
+        with open('runs/ddqn{}.npy'.format(exp), 'wb') as f:
             np.save(f, dur)
     if agent_type == 'random':
-        with open('runs/random.npy', 'wb') as f:
+        with open('runs/random{}.npy'.format(exp), 'wb') as f:
             np.save(f, dur)
 
 def save_epsilons(epsilons):
-    with open('runs','epsilons.npy', 'wb') as f:
+    with open('runs/epsilons.npy', 'wb') as f:
         np.save(f, epsilons)
 
 
-def train(env_str, agent_type, n_episodes, n_iterations, batch_size):
-    env = gym.make(env_str)
-    agent = create_agent(agent_type, env)
-    episode_duration, epsilons = env_interaction(env, agent, n_episodes, n_iterations, batch_size)
-    save_durations(episode_duration, agent_type)
+def train(env_str, agent_type, n_experiments, n_episodes, n_iterations, batch_size):
+    for exp in range(n_experiments):
+        env = gym.make(env_str)
+        agent = create_agent(agent_type, env)
+        episode_duration, epsilons = env_interaction(env, agent, exp, n_episodes, n_iterations, batch_size)
+        save_durations(episode_duration, agent_type, exp)
     if agent_type == 'dqn':
         save_epsilons(epsilons)
 
 
 if __name__ == "__main__":
-    n_episodes = 1500
+    n_experiments = 10
+    n_episodes = 4000
     n_iterations = 500
-    batch_size = 124
-    train('CartPole-v1', 'dqn', n_episodes, n_iterations, batch_size)
-    train('CartPole-v1', 'ddqn', n_episodes, n_iterations, batch_size)
-    train('CartPole-v1', 'random', n_episodes, n_iterations, batch_size)
+    batch_size = 32
+    train('CartPole-v1', 'dqn', n_experiments, n_episodes, n_iterations, batch_size)
+    train('CartPole-v1', 'ddqn', n_experiments, n_episodes, n_iterations, batch_size)
+    train('CartPole-v1', 'random', n_experiments, n_episodes, n_iterations, batch_size)
     
