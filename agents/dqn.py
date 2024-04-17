@@ -28,7 +28,7 @@ class DQNAgent:
         self.gamma = 1
         self.epsilon = 1 ## start epsilon
         self.epsilon_end = 0.05
-        self.epsilon_decay= 0.99#0.997
+        self.epsilon_decay= 0.992#0.997 for 2000 episodes, 0.99 for 1000 episodes
         self.env = env
         self.action_space = [i for i in range(env.action_space.n)]
         self.state_size = self.env.observation_space.shape[0]
@@ -37,11 +37,11 @@ class DQNAgent:
         self.target_model = DQNModel(self.state_size, env.action_space.n)
         self.target_model.load_state_dict(self.primary_model.state_dict())
         self.tau = 0.001
-        self.c = 1000
+        self.c = 10000
 
-        self.memory_capacity = 100000
+        self.memory_capacity = 10000
         self.memory_counter = 0
-        self.states_memory = np.zeros((self.memory_capacity, self.state_size), dtype=np.float32)
+        self.states_memory = np.zeros((self.memory_capacity, self.state_size), dtype=np.float32) #  [ [ 0 for y in range( self.memory_capacity ) ] for x in range( self.state_size ) ]
         self.next_states_memory = np.zeros((self.memory_capacity, self.state_size), dtype=np.float32)
         self.actions_memory = np.zeros(self.memory_capacity, dtype=np.int32)
         self.rewards_memory = np.zeros(self.memory_capacity, dtype=np.int32)
@@ -61,6 +61,7 @@ class DQNAgent:
             action = np.random.choice(self.action_space)
         else:
             state = torch.tensor(obs).to(self.primary_model.device)
+            self.primary_model.eval() 
             q_val = self.primary_model.forward(state)
             action = torch.argmax(q_val).item()
         return action
@@ -90,6 +91,7 @@ class DQNAgent:
 
         actions = self.actions_memory[batch]
 
+        self.target_model.eval()
         q_val = self.primary_model.forward(states)[batch_index, actions]
         next_q_val = self.target_model.forward(next_states)
         next_q_val[terminal] = 0.0
@@ -99,3 +101,5 @@ class DQNAgent:
         loss = self.primary_model.criterion(q_target, q_val).to(self.primary_model.device)
         loss.backward()
         self.primary_model.optimizer.step()
+
+        return loss.item()

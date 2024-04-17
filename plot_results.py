@@ -27,7 +27,8 @@ def plot_durations(avg1, avg2, avg3, sd1, sd2, sd3):
     ax.fill_between(range(len(avg2)), np.subtract(avg2, sd2), np.add(avg2, sd2), alpha=0.2)
     ax.fill_between(range(len(avg3)), np.subtract(avg3, sd3), np.add(avg3, sd3), alpha=0.2)
     plt.xlabel('Episode')
-    plt.ylabel('Episode durations')
+    plt.ylabel('Average episode durations')
+    plt.title('Average episode durations over 10 experiments of 4000 episodes.')
     plt.legend()
     plt.show()
 
@@ -46,7 +47,10 @@ def moving_average(data, window_size):
     return moving_avg, moving_std
 
 def load(agent_type, dur):
+    loss = 0
     if agent_type == 'dqn':
+        with open('runs/dqn_loss9.npy', 'rb') as f:
+            loss = np.load(f)
         with open('runs/dqn0.npy', 'rb') as f:
             dur.append(np.load(f))
         with open('runs/dqn1.npy', 'rb') as f:
@@ -68,6 +72,8 @@ def load(agent_type, dur):
         with open('runs/dqn9.npy', 'rb') as f:
             dur.append(np.load(f))
     elif agent_type == 'ddqn':
+        with open('runs/ddqn_loss9.npy', 'rb') as f:
+            loss = np.load(f)
         with open('runs/ddqn0.npy', 'rb') as f:
             dur.append(np.load(f))
         with open('runs/ddqn1.npy', 'rb') as f:
@@ -113,12 +119,26 @@ def load(agent_type, dur):
         with open('runs/epsilons.npy', 'rb') as f:
             dur = np.load(f)
 
-    return dur
+    return dur, loss
 
 def plot_epsilons(epsilons):
     plt.plot(epsilons)
     plt.xlabel('Episode')
     plt.ylabel('Epsilons')
+    plt.show()
+
+def plot_experiment(dur, exp):
+    plt.plot(dur)
+    plt.xlabel('Episode')
+    plt.ylabel('Episode durations')
+    plt.title('Episode durations for experiment nr {}'.format(exp))
+    plt.show()
+
+def plot_loss(loss):
+    plt.plot(loss)
+    plt.xlabel('Iteration')
+    plt.ylabel('Loss value')
+    plt.title('Loss values for the primary network')
     plt.show()
 
 def results(agent_types):
@@ -134,17 +154,20 @@ def results(agent_types):
 if __name__ == "__main__":
     #agent_types = ['dqn', 'ddqn', 'random']
     
-    #epsilons = load('epsilons')
+    epsilons = load('epsilons', [])
     #plot_epsilons(epsilons)
     
-    dur1 = load('dqn', [])
-    dur2 = load('ddqn', [])
-    dur3 = load('random', [])
-    
+    dur1, loss1 = load('dqn', [])
+    dur2, loss2 = load('ddqn', [])
+    dur3, _ = load('random', [])
+
     avg1, sd1 = compute_average(dur1)
     avg2, sd2 = compute_average(dur2)
     avg3, sd3 = compute_average(dur3)
 
     plot_durations(avg1, avg2, avg3, sd1, sd2, sd3)
     
-    
+    for n in range (len(dur2)):
+        plot_experiment(dur2[n], n)
+        if n == 9:
+            plot_loss(loss2)

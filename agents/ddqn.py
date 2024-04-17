@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 import random
 from collections import deque, namedtuple
 import torch.nn as nn
@@ -22,7 +21,10 @@ class DDQNAgent(DQNAgent):
 
         actions = self.actions_memory[batch]
 
-        q1 = self.primary_model.forward(states)[batch_index, actions]
+        self.primary_model.eval()
+        self.target_model.eval()
+
+        #q1 = self.primary_model.forward(states)[batch_index, actions]
 
         q2 = self.primary_model.forward(next_states)
         q_ = self.target_model.forward(next_states)
@@ -31,8 +33,10 @@ class DDQNAgent(DQNAgent):
         q_ = q_[batch_index, temp]
         q_target = rewards + self.gamma*q_
        
+        self.primary_model.train()
+        q1 = self.primary_model.forward(states)[batch_index, actions]
         loss = self.primary_model.criterion(q_target, q1).to(self.primary_model.device)
         loss.backward()
         self.primary_model.optimizer.step()
         
-    
+        return loss.item()

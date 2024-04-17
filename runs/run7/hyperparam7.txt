@@ -1,0 +1,5 @@
+c = 100
+layers = 24 neurons each
+epsilon decay = 0.99 # n_episodes = 1000
+memory capacity = 100000
+batch size = 32

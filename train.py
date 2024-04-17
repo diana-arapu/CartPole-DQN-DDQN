@@ -1,6 +1,5 @@
 import gymnasium as gym
 import torch
-import numpy as np
 from agents.dqn import *
 from agents.ddqn import *
 from agents.random import *
@@ -29,8 +28,10 @@ def save_model(agent, exp):
 def env_interaction(env, agent, exp, n_episodes, n_iterations=500, batch_size=64):
     steps = 0
     episode_durations = np.array([])
+    loss = np.array([])
     epsilons = np.array([], np.float32)
     saving = 1000
+    
 
     for e in range(n_episodes):
         current_state, info = env.reset(seed=42)
@@ -44,7 +45,7 @@ def env_interaction(env, agent, exp, n_episodes, n_iterations=500, batch_size=64
             agent.store_transition(current_state, action, next_state, reward, done)
             
             if steps >= batch_size and not isinstance(agent, RandomAgent):
-                agent.train(batch_size)
+                loss = np.append(loss, agent.train(batch_size))
                 agent.hard_update(i)
             
             current_state = next_state
@@ -61,7 +62,7 @@ def env_interaction(env, agent, exp, n_episodes, n_iterations=500, batch_size=64
 
     env.close()
     save_model(agent, exp)
-    return episode_durations, epsilons
+    return episode_durations, epsilons, loss
 
 def save_durations(dur, agent_type, exp):
     if agent_type == 'dqn':
@@ -78,20 +79,31 @@ def save_epsilons(epsilons):
     with open('runs/epsilons.npy', 'wb') as f:
         np.save(f, epsilons)
 
+def save_loss(loss, agent_type, exp):
+    if agent_type == 'dqn':
+        with open('runs/dqn_loss{}.npy'.format(exp), 'wb') as f:
+            np.save(f, loss)
+    if agent_type == 'ddqn':
+        with open('runs/ddqn_loss{}.npy'.format(exp), 'wb') as f:
+            np.save(f, loss)
+
 
 def train(env_str, agent_type, n_experiments, n_episodes, n_iterations, batch_size):
     for exp in range(n_experiments):
         env = gym.make(env_str)
         agent = create_agent(agent_type, env)
-        episode_duration, epsilons = env_interaction(env, agent, exp, n_episodes, n_iterations, batch_size)
+        episode_duration, epsilons, loss = env_interaction(env, agent, exp, n_episodes, n_iterations, batch_size)
         save_durations(episode_duration, agent_type, exp)
+        if agent_type != 'random':
+            save_loss(loss, agent_type, exp)
     if agent_type == 'dqn':
         save_epsilons(epsilons)
+    
 
 
 if __name__ == "__main__":
     n_experiments = 10
-    n_episodes = 4000
+    n_episodes = 1000
     n_iterations = 500
     batch_size = 32
     train('CartPole-v1', 'dqn', n_experiments, n_episodes, n_iterations, batch_size)
